@@ -1,34 +1,34 @@
 ---
 
-- name: add group oinstall
+- name: add primary group {{ primary_group }}
   group:
-    name: oinstall
+    name: "{{ primary_group }}"
     state: present
     gid: 101
-  register: add_group_oinstall
+  register: add_primary_group
 
-- name: verify add group oinstall
-  debug: var=add_group_oinstall
+- name: verify add primary group {{ primary_group}}
+  debug: var=add_primary_group
 
-- name: add group dba
+- name: add secondary group {{ secondary_group }}
   group:
-    name: dba
+    name: "{{ secondary_group }}"
     state: present 
     gid: 102
-  register: add_group_dba
+  register: add_secondary_group
 
-- name: verify add group dba
-  debug: var=add_group_dba
+- name: verify add secondary group {{ secondary_group }}
+  debug: var=add_secondary_group
 
-- name: add user oracle
+- name: add user oracle user {{ oracle_user }}
   user:
-    name: oracle
+    name: "{{ oracle_user }}"
     uid: 100
-    group: oinstall
-    groups: dba
+    group: "{{ primary_group }}"
+    groups: "{{ secondary_group }}"
     shell: /bin/bash
     expires: -1
-  register: add_user_oracle
+  register: add_oracle_user
 
-- name: verify add user oracle
-  debug: var=add_user_oracle
+- name: verify add user {{ oracle_user }}
+  debug: var=add_oracle_user

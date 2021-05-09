@@ -2,3 +2,6 @@
 
 role_actions: "{{ var_role_actions }}"
 become_user: "{{ var_become_user }}"
+oracle_user: "{{ var_oracle_user }}"
+primary_group: "{{ var_primary_group }}"
+secondary_group: "{{ var_secondary_group }}"
