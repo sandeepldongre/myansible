@@ -4,9 +4,6 @@ target_hosts:
   - rac2
 var_role_name: create_database
 var_become_user: root
-var_oracle_user: oracle
-var_primary_group: oinstall
-var_secondary_group: dba
 var_role_actions:
   - config_host
 

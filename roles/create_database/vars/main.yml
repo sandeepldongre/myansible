@@ -1,7 +1,35 @@
 ---
 
 role_actions: "{{ var_role_actions }}"
-become_user: "{{ var_become_user }}"
-oracle_user: "{{ var_oracle_user }}"
-primary_group: "{{ var_primary_group }}"
-secondary_group: "{{ var_secondary_group }}"
+become_user: root
+
+oracle_user:
+  name: oracle
+  uid: 1000
+  primary_group: oinstall
+  primary_group_gid: 1001
+  secondary_group: dba
+  secondary_group_gid: 1002
+
+kernel_parameters:
+    - { name: kernel.shmall, value: 2097152 }
+    - { name: kernel.shmmax, value: 536870912 }
+    - { name: kernel.shmmni, value: 4096 }
+    - { name: fs.aio-max-nr, value: 1048576 }
+    - { name: fs.file-max, value: 6815744 }
+    - { name: kernel.sem, value: 250 32000 100 128 }
+    - { name: net.ipv4.ip_local_port_range, value: 9000 65500 }
+    - { name: net.core.rmem_default, value: 262144 }
+    - { name: net.core.rmem_max, value: 4194304 }
+    - { name: net.core.wmem_default, value: 262144 }
+    - { name: net.core.wmem_max, value: 1048576 }
+
+user_limits:
+    - { limit_item: nproc, limit_type: soft, value: 2047 }
+    - { limit_item: nproc, limit_type: hard, value: 16384 }
+    - { limit_item: nofile, limit_type: soft, value: 1024 }
+    - { limit_item: nofile, limit_type: hard, value: 65536 }
+    - { limit_item: core, limit_type: soft, value: unlimited }
+    - { limit_item: core, limit_type: hard, value: unlimited }
+
+
