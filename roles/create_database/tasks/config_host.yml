@@ -1,0 +1,34 @@
+---
+
+- name: add group oinstall
+  group:
+    name: oinstall
+    state: present
+    gid: 101
+  register: add_group_oinstall
+
+- name: verify add group oinstall
+  debug: var=add_group_oinstall
+
+- name: add group dba
+  group:
+    name: dba
+    state: present 
+    gid: 102
+  register: add_group_dba
+
+- name: verify add group dba
+  debug: var=add_group_dba
+
+- name: add user oracle
+  user:
+    name: oracle
+    uid: 100
+    group: oinstall
+    groups: dba
+    shell: /bin/bash
+    expires: -1
+  register: add_user_oracle
+
+- name: verify add user oracle
+  debug: var=add_user_oracle

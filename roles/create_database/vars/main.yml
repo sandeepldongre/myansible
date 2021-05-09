@@ -1,3 +1,4 @@
 ---
 
-
+role_actions: "{{ var_role_actions }}"
+become_user: "{{ var_become_user }}"

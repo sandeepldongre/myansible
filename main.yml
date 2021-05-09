@@ -1,0 +1,12 @@
+---
+
+- name: base playbook to dynamically load roles
+  hosts: "{{ target_hosts }}"
+  gather_facts: true
+  gather_timeout: 60
+  become: true
+  become_user: "{{ var_become_user }}"
+#  vars:
+  tasks:
+    - include_role:
+        name: "{{ var_role_name }}"
