@@ -1,0 +1,139 @@
+---
+
+- name: set vars
+  set_fact:
+    oracle_base: "{{ filesystem_name }}/app/oracle"
+    oracle_home: "{{ filesystem_name}}/app/oracle/product/19.3.0.0"
+
+- name: create directories
+  file:
+    path: "{{ new_oracle_home }}"
+    state: directory
+    owner: "{{ oracle_user.name }}"
+    group: "{{ oracle_user.primary_group }}"
+    mode: 0755
+
+- name: unzip a file that is already on the remote machine
+  become_user: "{{ oracle_user.name }}"
+  unarchive:
+    src: "{{ stage_dir }}/19.11.0.0.210420.zip"
+    dest: "{{ new_oracle_home }}"
+    remote_src: yes
+
+- name: set logfile name
+  set_fact:
+    logfile: "{{ stage_dir }}/oracle_software_clone_{{ ansible_date_time.iso8601_basic_short }}.log"
+
+- name: stop database
+  include_tasks: stop_database.yml
+
+- name: software clone
+  become_user: "{{ oracle_user.name }}"
+  shell:
+    cmd: |
+      echo -e "Start Time\t: `date`" > {{ logfile }} 
+      echo -e "Message\t\t: cloning Oracle Software on ORACLE_HOME {{ new_oracle_home }}...\n" >> {{ logfile }}
+      {{ new_oracle_home }}/runInstaller -silent \
+      oracle.install.option=INSTALL_DB_SWONLY \
+      UNIX_GROUP_NAME={{ oracle_user.primary_group }} \
+      ORACLE_HOME={{ new_oracle_home }} \
+      ORACLE_BASE={{ oracle_base }} \
+      oracle.install.db.InstallEdition=EE \
+      oracle.install.db.DBA_GROUP={{ oracle_user.primary_group }} \
+      oracle.install.db.OSDBA_GROUP={{ oracle_user.primary_group }} \
+      oracle.install.db.OSBACKUPDBA_GROUP={{ oracle_user.primary_group }} \
+      oracle.install.db.OSDGDBA_GROUP={{ oracle_user.primary_group }} \
+      oracle.install.db.OSKMDBA_GROUP={{ oracle_user.primary_group }} \
+      oracle.install.db.OSRACDBA_GROUP={{ oracle_user.primary_group }} \
+      SECURITY_UPDATES_VIA_MYORACLESUPPORT=false \
+      DECLINE_SECURITY_UPDATES=true >> {{ logfile }}
+  register: oracle_software_cloning
+  failed_when: not (oracle_software_cloning.rc != 0 or oracle_software_cloning.rc != 6)
+
+- name: verify oracle software cloning
+  debug: var=oracle_software_cloning
+
+- name: run root.sh scripts
+  become_user: root
+  shell: "{{ item }}"
+  with_items:
+    - "{{ oracle_base }}/../oraInventory/orainstRoot.sh"
+    - "{{ new_oracle_home }}/root.sh"
+  register: run_root_scripts
+
+- name: verify run root.sh scripts
+  debug: var=run_root_scripts
+
+- name: find parameter(s)/password files
+  become: true
+  become_user: "{{ oracle_user.name }}"
+  find:
+    path: "{{ oracle_home }}/dbs"
+    patterns: '*{{ oracle_sid }}.ora,orapw{{ oracle_sid }}'
+  register: find_parameter_password_files
+
+- name: verify parameter(s)/password files
+  debug: var=find_parameter_password_files
+
+- name: copy parameter(s)/password files to new oracle_home
+  become: true
+  become_user: "{{ oracle_user.name }}"
+  copy: 
+    src: "{{ item.path }}"
+    dest: "{{ new_oracle_home }}/dbs"
+    remote_src: yes
+    force: no
+    backup: yes
+  with_items: "{{ find_parameter_password_files.files }}"
+  register: copy_parameter_password_files
+
+- name: verify copy parameter(s)/password files to new oracle_home
+  debug: var=copy_parameter_password_files
+  when: copy_parameter_password_files.changed
+
+- name: find listeners tnsnames and sqlnet files
+  become: true
+  become_user: "{{ oracle_user.name }}"
+  find:
+    path: "{{ oracle_home }}/network/admin"
+    patterns: '*tnsnames.ora,listener.ora,sqlnet.ora'
+  register: find_listener_tnsnames_sqlnet_files
+
+- name: verify listeners tnsnames and sqlnet files
+  debug: var=find_listener_tnsnames_sqlnet_files
+
+- name: copy listeners tnsnames and sqlnet files to new oracle_home
+  become: true
+  become_user: "{{ oracle_user.name }}"
+  copy: 
+    src: "{{ item.path }}"
+    dest: "{{ new_oracle_home }}/network/admin"
+    remote_src: yes
+    force: no
+    backup: yes
+  with_items: "{{ find_listener_tnsnames_sqlnet_files.files }}"
+  register: copy_listener_tnsnames_sqlnet_files
+
+- name: verify copy listeners tnsnames and sqlnet files to new oracle_home
+  debug: var=copy_listener_tnsnames_sqlnet_files
+  when: copy_listener_tnsnames_sqlnet_files.changed
+
+- name: update new oracle_home in config files
+  become: true
+  become_user: root
+  replace:
+    path: "{{ item }}"
+    regexp: "{{ oracle_home }}"
+    replace: "{{ new_oracle_home }}"
+  with_items: 
+    - /etc/oratab
+    - "{{ new_oracle_home }}/network/admin/listener.ora"
+  register: update_config_files
+
+- name: verify update new oracle_home in config files
+  debug: var=update_config_files
+  when: update_config_files.changed
+
+- name: start database
+  include_tasks: start_database.yml
+

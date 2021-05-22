@@ -1,0 +1,58 @@
+---
+
+- name: check oracle_sid
+  shell: "cat /etc/oratab|egrep -v '\\#|^$'|awk -F ':' '{print $1}'"
+  register: check_oracle_sid
+
+- name: set oracle_sid
+  set_fact:
+    oracle_sid: "{{ check_oracle_sid.stdout }}"
+
+- name: check oracle_oracle
+  shell: "cat /etc/oratab|egrep '^{{ oracle_sid }}:'|awk -F ':' '{print $2}'"
+  register: check_oracle_home
+
+- name: set oracle_home
+  set_fact:
+    oracle_home: "{{ check_oracle_home.stdout }}"
+
+- name: check database_running
+  shell: "ps -ef|grep 'ora_pmon_{{ oracle_sid }}$'|grep -v grep|wc -l" 
+  register: is_database_running 
+
+- name: verify database_running 
+  debug: var=is_database_running
+
+- name: set database_running 
+  set_fact:
+    database_running: >-
+      {% if is_database_running.changed == true -%}
+      {%- if is_database_running.stdout|int == 0 -%}
+      false
+      {%- else -%}
+      true
+      {%- endif -%}
+      {%- else -%}
+      unknown
+      {%- endif %}
+
+- name: print variables
+  debug:
+    msg:
+      - oracle_sid={{ oracle_sid }}
+      - oracle_home={{ oracle_home }}
+      - database_running={{ database_running }}
+
+- name: start database {{ oracle_sid }}
+  become_user: "{{ oracle_user.name }}"
+  shell: "echo -e \"whenever sqlerror exit sql.sqlcode;\nstartup\"|sqlplus / as sysdba"
+  environment:
+   ORACLE_SID: "{{ oracle_sid }}"
+   ORACLE_HOME: "{{ oracle_home }}"
+   PATH: "{{ oracle_home }}/bin:{{ ansible_env.PATH }}"
+  when: "database_running == false"
+  register: start_database
+
+- name: verify start database {{ oracle_sid }}
+  debug: var=start_database
+  when: "start_database.changed == true"

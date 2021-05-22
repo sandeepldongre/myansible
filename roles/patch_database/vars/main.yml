@@ -1,0 +1,17 @@
+---
+
+role_actions: "{{ var_role_actions }}"
+become_user: root
+filesystem_name: "{{ var_filesystem_name }}"
+new_oracle_home: "{{ var_filesystem_name }}/app/oracle/product/19.11.0.0/dbhome_210420_1"
+stage_dir: "{{ var_filesystem_name }}/stage"
+oracle_base: "{{ filesystem_name }}/app/oracle"
+
+oracle_user:
+  name: oracle
+  uid: 1000
+  primary_group: oinstall
+  primary_group_gid: 1001
+  secondary_group: dba
+  secondary_group_gid: 1002
+

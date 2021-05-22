@@ -1,38 +1,5 @@
 ---
 
-- name: add primary group {{ oracle_user.primary_group }}
-  group:
-    name: "{{ oracle_user.primary_group }}"
-    state: present
-    gid: "{{ oracle_user.primary_group_gid }}"
-  register: add_primary_group
-
-- name: verify add primary group {{ oracle_user.primary_group}}
-  debug: var=add_primary_group
-
-- name: add secondary group {{ oracle_user.secondary_group }}
-  group:
-    name: "{{ oracle_user.secondary_group }}"
-    state: present
-    gid: "{{ oracle_user.secondary_group_gid }}"
-  register: add_secondary_group
-
-- name: verify add secondary group {{ oracle_user.secondary_group }}
-  debug: var=add_secondary_group
-
-- name: add user oracle user {{ oracle_user.name }}
-  user:
-    name: "{{ oracle_user.name }}"
-    uid: "{{ oracle_user.uid }}"
-    group: "{{ oracle_user.primary_group }}"
-    groups: "{{ oracle_user.secondary_group }}"
-    shell: /bin/bash
-    expires: -1
-  register: add_oracle_user
-
-- name: verify add user {{ oracle_user.name }}
-  debug: var=add_oracle_user
-
 - name: create directories
   file:
     path: "{{ stage_dir }}"
@@ -79,6 +46,39 @@
     name: "{{ rpm }}"
     state: latest
   register: install_rpms
+
+- name: add primary group {{ oracle_user.primary_group }}
+  group:
+    name: "{{ oracle_user.primary_group }}"
+    state: present
+    gid: "{{ oracle_user.primary_group_gid }}"
+  register: add_primary_group
+
+- name: verify add primary group {{ oracle_user.primary_group}}
+  debug: var=add_primary_group
+
+- name: add secondary group {{ oracle_user.secondary_group }}
+  group:
+    name: "{{ oracle_user.secondary_group }}"
+    state: present
+    gid: "{{ oracle_user.secondary_group_gid }}"
+  register: add_secondary_group
+
+- name: verify add secondary group {{ oracle_user.secondary_group }}
+  debug: var=add_secondary_group
+
+- name: add user oracle user {{ oracle_user.name }}
+  user:
+    name: "{{ oracle_user.name }}"
+    uid: "{{ oracle_user.uid }}"
+    group: "{{ oracle_user.primary_group }}"
+    groups: "{{ oracle_user.secondary_group }}"
+    shell: /bin/bash
+    expires: -1
+  register: add_oracle_user
+
+- name: verify add user {{ oracle_user.name }}
+  debug: var=add_oracle_user
 
 - name: set kernal parameters
   sysctl:
@@ -155,16 +155,14 @@
 - name: verify oracle software installation
   debug: var=oracle_software_installation
 
+- name: find root.sh script
+  replace:
+    path: "{{ logfile }}"
+    regexp: "^Execute (.+) on the following nodes:"
+  check_mode: yes
+  register: find_root_script
 
-- name: run root.sh scripts
-  become_user: root
-  shell: "{{ item }}"
-  with_items:
-    - "{{ oracle_base }}/../oraInventory/orainstRoot.sh"
-    - "{{ oracle_home }}/root.sh"
-  register: run_root_scripts
+- name: verify root.sh script
+  debug: var=find_root_script
 
-- name: verify run root.sh scripts
-  debug: var=run_root_scripts
-
-
+  

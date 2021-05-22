@@ -2,6 +2,18 @@
 
 role_actions: "{{ var_role_actions }}"
 become_user: root
+filesystem_name: "{{ var_filesystem_name }}"
+stage_dir: "{{ var_filesystem_name }}/stage"
+oracle_home_dir: "{{ var_filesystem_name }}/app/oracle/product/19.3.0.0"
+oracle_base_dir: "{{ var_filesystem_name }}/app/oracle"
+oracle_inventory_dir: "{{ var_filesystem_name }}/app/oracle/orainventory"
+oracle_db_software: "{{ stage_dir }}/LINUX.X64_193000_db_home.zip"
+
+directories:
+  - "{{ stage_dir }}"
+  - "{{ oracle_home_dir }}"
+  - "{{ oracle_base_dir }}"
+  - "{{ oracle_inventory_dir }}"
 
 oracle_user:
   name: oracle
@@ -12,24 +24,29 @@ oracle_user:
   secondary_group_gid: 1002
 
 kernel_parameters:
-    - { name: kernel.shmall, value: 2097152 }
-    - { name: kernel.shmmax, value: 536870912 }
-    - { name: kernel.shmmni, value: 4096 }
-    - { name: fs.aio-max-nr, value: 1048576 }
-    - { name: fs.file-max, value: 6815744 }
-    - { name: kernel.sem, value: 250 32000 100 128 }
-    - { name: net.ipv4.ip_local_port_range, value: 9000 65500 }
-    - { name: net.core.rmem_default, value: 262144 }
-    - { name: net.core.rmem_max, value: 4194304 }
-    - { name: net.core.wmem_default, value: 262144 }
-    - { name: net.core.wmem_max, value: 1048576 }
+  - { name: kernel.shmall, value: 2097152 }
+  - { name: kernel.shmmax, value: 536870912 }
+  - { name: kernel.shmmni, value: 4096 }
+  - { name: fs.aio-max-nr, value: 1048576 }
+  - { name: fs.file-max, value: 6815744 }
+  - { name: kernel.sem, value: 250 32000 100 128 }
+  - { name: net.ipv4.ip_local_port_range, value: 9000 65500 }
+  - { name: net.core.rmem_default, value: 262144 }
+  - { name: net.core.rmem_max, value: 4194304 }
+  - { name: net.core.wmem_default, value: 262144 }
+  - { name: net.core.wmem_max, value: 1048576 }
 
 user_limits:
-    - { limit_item: nproc, limit_type: soft, value: 2047 }
-    - { limit_item: nproc, limit_type: hard, value: 16384 }
-    - { limit_item: nofile, limit_type: soft, value: 1024 }
-    - { limit_item: nofile, limit_type: hard, value: 65536 }
-    - { limit_item: core, limit_type: soft, value: unlimited }
-    - { limit_item: core, limit_type: hard, value: unlimited }
+  - { limit_item: nproc, limit_type: soft, value: 2047 }
+  - { limit_item: nproc, limit_type: hard, value: 16384 }
+  - { limit_item: nofile, limit_type: soft, value: 1024 }
+  - { limit_item: nofile, limit_type: hard, value: 65536 }
+  - { limit_item: core, limit_type: soft, value: unlimited }
+  - { limit_item: core, limit_type: hard, value: unlimited }
 
+rpm:
+  - net-tools # Clusterware
+
+stage_files:
+  - /u001/LINUX.X64_193000_db_home.zip
 

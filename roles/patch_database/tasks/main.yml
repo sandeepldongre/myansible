@@ -1,0 +1,4 @@
+---
+
+- include_tasks: "software_clone.yml"
+  when: "'software_clone' in role_actions" 

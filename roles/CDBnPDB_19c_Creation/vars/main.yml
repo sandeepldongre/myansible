@@ -1,0 +1,58 @@
+---
+
+role_actions: "{{ var_role_actions }}"
+become_user: root
+filesystem_name: "{{ var_filesystem_name }}"
+stage_dir: "{{ var_filesystem_name }}/stage"
+oracle_home_dir: "{{ var_filesystem_name }}/app/oracle/product/19.3.0.0"
+oracle_base_dir: "{{ var_filesystem_name }}/app/oracle"
+oracle_inventory_dir: "{{ var_filesystem_name }}/app/oracle/orainventory"
+
+dbfile_path: "{{ var_filesystem_name }}/app/oracle/oradata"
+fra_path: "{{ var_filesystem_name }}/app/oracle/fra"
+
+directories:
+  - "{{ stage_dir }}"
+  - "{{ oracle_home_dir }}"
+  - "{{ oracle_base_dir }}"
+  - "{{ oracle_inventory_dir }}"
+  - "{{ dbfile_path }}"
+  - "{{ fra_path  }}"
+
+oracle_user:
+  name: oracle
+  uid: 1000
+  primary_group: oinstall
+  primary_group_gid: 1001
+  secondary_group: dba
+  secondary_group_gid: 1002
+
+silent_database19c_config_file: "{{ stage_dir }}/silent_19cdb_config.rsp"
+cdb_name: "MYCDB"
+oracle_sid: "MYCDB"
+oracleuser_home: "/home/{{ oracle_user.name }}"
+oracle_rsp_stage: "{{ stage_dir }}"
+syspass: "Oracle123"
+dbunq_name: MYCDB
+prihost: rac2
+portnum: 1521
+template_name: General_Purpose.dbc
+db_properties:                                            
+      - home: "19.3.0.0"                             
+        oracle_dbversion: 19.3.0.0                    
+        oracle_edition: EE                             
+        cdb_name: MYCDB                               
+        dbconfig_type: SI                            
+        container_db: true                          
+        db_storage_type: FS                        
+        totalMemory: 1200                         
+        oracle_database_type: MULTIPURPOSE      
+        redolog_size_in_mb: 50
+        state: present                         
+        dbfile_path: "{{ var_filesystem_name }}/app/oracle/oradata" 
+        fra_path: "{{ var_filesystem_name }}/app/oracle/fra" 
+dbpasswords:
+       MYCDB:
+         sys: Oracle123
+         system: Oracle123
+

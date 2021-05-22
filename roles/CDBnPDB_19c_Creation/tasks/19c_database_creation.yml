@@ -1,0 +1,67 @@
+---
+
+- name: set vars
+  set_fact:
+    oracle_base: "{{ filesystem_name }}/app/oracle"
+    oracle_home: "{{ filesystem_name}}/app/oracle/product/19.3.0.0"
+
+- name: Create_CDB create required directories
+  file:
+    path="{{ item }}"
+    state=directory
+    owner="{{ oracle_user.name }}"
+    group="{{ oracle_user.primary_group }}"
+    mode=0755
+  with_items:
+    - "{{ stage_dir }}"
+    - "{{ dbfile_path }}"
+    - "{{ fra_path }}"
+  register: filesystem_creation  
+
+- name: verify directory creation
+  debug: var=filesystem_creation
+
+- name: validate oracle database software is installed
+  stat: path="{{ oracle_home }}/bin/sqlplus"
+  register: sqlplus
+  become: yes
+  become_user: root 
+  register: validate_oracle_database_software
+
+- name: verify oracle database software 
+  debug: var=validate_oracle_database_software
+ 
+- name: copy create silent database install file
+  become_user: root
+  template:
+    src=roles/CDBnPDB_19c_Creation/templates/dbcacdb.rsp.{{ item.0.oracle_dbversion }}.j2
+    dest='{{ stage_dir }}/silent_19cdb_config.rsp'
+    owner="{{ oracle_user.name }}"
+    group="{{ oracle_user.primary_group }}"
+    mode=0755
+  with_together:
+     - "{{db_properties}}"
+  register: silent_install_responseFile_file_copy
+
+- name: verify copy responseFile 
+  debug: var=silent_install_responseFile_file_copy
+
+- name: set logfile name
+  set_fact:
+    logfile: "{{ stage_dir }}/oracle_container_db_creation_{{ ansible_date_time.iso8601_basic_short }}.log"
+
+- name: Create a Container MYCDB Database
+  become_user: "{{ oracle_user.name }}"
+  shell:
+    cmd: |
+      echo -e "Start Time\t: `date`" > {{ logfile }} 
+      echo -e "Message\t\t: Creating 19c Container database ORACLE_HOME {{ oracle_home }}...\n" >> {{ logfile }}
+      export ORACLE_HOME={{ oracle_home }}; {{ oracle_home }}/bin/dbca -silent -createDatabase -responseFile {{ silent_database19c_config_file }}
+  with_together:
+     - "{{db_properties}}"
+  register: Create_MYCDB_Container_database
+  ignore_errors: true
+ 
+- name: verify Create a Container MYCDB Database 
+  debug: var=Create_MYCDB_Container_database
+
